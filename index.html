@@ -205,8 +205,8 @@
                             IP: ipDevice,
                             Navegador: navigatatorDevice,
                             accessToken: accessToken,
-                            refreshToken: tokens.refreshToken,
-                            refreshTokenId: tokens.refreshTokenId
+                            refreshToken: tokens ? tokens.refreshToken : null,
+                            refreshTokenId: tokens ? tokens.refreshTokenId : null,
                         }
                     )
                 });
