@@ -7,125 +7,38 @@
     <title>Inicio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+
 </head>
 
-<body>
-    <h1>Home!!</h1>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
 
-    <button id="btnRefresh"> refrescar token</button>
-    <div class="w-64">
-        <label for="usuarios" class="block text-sm font-medium text-gray-700 mb-1">Seleccionar usuario</label>
-        <select id="usuarios" name="usuarios" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:border-blue-300 sm:text-sm">
-          <option value="00000000-0000-0000-0000-000000000000">-- Seleccione un usuario --</option>
-          <option value="5CF08E93-548D-4ABF-8F30-FC1568F1234F">OMAR</option>
-        </select>
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+      <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center" id="hHome">¡Bienvenido!</h1>
+  
+      <div class="flex flex-col gap-4">
+        <!-- Botón refrescar token -->
+        <button id="btnRefresh" class="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+          Refrescar Token
+        </button>
+  
+        <!-- Select de usuarios -->
+        <div class="w-full">
+          <label for="usuarios" class="block text-sm font-medium text-gray-700 mb-1">Seleccionar usuario</label>
+          <select id="usuarios" name="usuarios"
+            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:border-blue-300 sm:text-sm">
+            <option value="00000000-0000-0000-0000-000000000000">-- Seleccione un usuario --</option>
+            <option value="5CF08E93-548D-4ABF-8F30-FC1568F1234F">OMAR</option>
+          </select>
+        </div>
+  
+        <!-- Botón cerrar sesión -->
+        <button id="btnLogout" class="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition">
+          Cerrar sesión
+        </button>
       </div>
-      
-</body>
+    </div>
+  
+  </body>
 
 </html>
-<script>
-    const key = "2BE1moQ*4{w(uh?W?]SlB9W1Hsl`|<8j";
-    function toggleDropdown() {
-        const menu = document.getElementById("dropdownMenu");
-        menu.classList.toggle("hidden");
-    }
-    async function getDeviceId(params) {
-        const { default: FingerprintJS } = await import('./fingerprint.js');
-
-        const fp = await FingerprintJS.load();
-        const result = await fp.get();
-
-        return result.visitorId;
-    }
-
-    const decrypt = (encrypted) => {
-        const decrypted = CryptoJS.AES.decrypt(encrypted, key).toString(CryptoJS.enc.Utf8);
-        return decrypted;
-    }
-
-    let btnRefresh = document.getElementById('btnRefresh')
-    btnRefresh.addEventListener('click', async function () {
-        let deviceId = localStorage.getItem("deviceId");
-        let ipDevice = "Desconocida";
-        if (!deviceId) {
-            deviceId = await getDeviceId();
-            localStorage.setItem("deviceId", deviceId);
-        }
-        const request = indexedDB.open("Prueba", 1);
-
-        request.onsuccess = async (event) => {
-            const db = event.target.result;
-            const transaction = db.transaction("tokens", "readonly");
-            const store = transaction.objectStore("tokens");
-
-            const getRequest = store.get(deviceId);
-
-            getRequest.onsuccess = async (event) => {
-                const result = event.target.result;
-                if (result) {
-                    console.log("Token encontrado:", result);
-                    let refreshToken = decrypt(result.value)
-                    console.log(refreshToken, result.refreshTokenId)
-                    // Aquí podrías llamar a renovarAccessToken(result.value) si quieres
-                    await renovarAccessToken(result.refreshTokenId, refreshToken);
-                } else {
-                    console.log("No se encontró ningún token con ese ID.");
-                }
-            };
-
-            getRequest.onerror = () => {
-                console.error("Error al obtener token de IndexedDB");
-            };
-        };
-
-        request.onerror = () => {
-            console.error("Error al abrir IndexedDB");
-        };
-
-    })
-    const encrypt = (refreshToken, refreshTokenId, deviceId) => {
-        const data = refreshToken;
-        const encrypted = CryptoJS.AES.encrypt(refreshToken, key).toString();
-        // console.log("Encrypted:", encrypted);
-        const request = indexedDB.open("Prueba", 1)
-        request.onsuccess = (event) => {
-            const db = event.target.result;
-            const transaction = db.transaction("tokens", "readwrite")
-            const store = transaction.objectStore("tokens");
-            store.put({ id: deviceId, value: encrypted, refreshTokenId: refreshTokenId })
-        };
-
-    }
-    async function renovarAccessToken(refreshTokenId, refreshToken) {
-        try {
-            const deviceId = localStorage.getItem("deviceId") || "unknown";
-            const response = await fetch("https://earlysparklypen72.conveyor.cloud/api/Login/refresh-token", {
-                method: "POST",
-                credentials: "include", // 🔥 Enviar la cookie HttpOnly automáticamente
-                headers: {
-                    "Device-Id": deviceId,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(
-                    {
-                        refreshToken: refreshToken,
-                        refreshTokenId: refreshTokenId,
-                        ip: "Desconocido"
-                    }
-                )
-            });
-
-            if (!response.ok) {
-                throw new Error("Sesión expirada, por favor inicia sesión nuevamente.");
-            }
-
-            const data = await response.json();
-            sessionStorage.setItem("accessToken", data.usuarioInfo); // ✅ Guardar solo el accessToken
-            encrypt(data.refreshToken, data.refreshTokenId, deviceId)
-        } catch (error) {
-            console.error(error.message);
-            // window.location.href = "/login"; // Redirigir si la sesión expiró
-        }
-    }
-</script>
+<script type="module" src="./home.js"></script>

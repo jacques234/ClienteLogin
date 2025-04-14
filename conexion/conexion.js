@@ -1,0 +1,1 @@
+export const apiUrl = "https://rico-metabolism-cameron-propecia.trycloudflare.com/"
